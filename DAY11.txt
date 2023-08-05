@@ -1,0 +1,218 @@
+1. Write a window subfile to show the transaction details of a particular account number
+and use SFLCRRRRN to select the account from window subfile.
+
+
+0000.01 F* INSERT BANK TRANSACTION AND UPDATE MASTER BALANCE    
+0000.02 F* BASED ON CR/DR                                       
+0000.03 F* PGM USES WDWSFL TO SELECT A/C NO FROM LIST           
+0000.04 F* USER INPUT '1' ON OPT                                
+0000.05 F* PGM READS SFL RECORD THAT WAS CHANGED BY 'READC'     
+0001.00 FBANKMAST  UF   E           K DISK                      
+0002.00 FBANKTRAN  O    E             DISK                      
+0003.00 FTRAN1D    CF   E             WORKSTN SFILE(MSTSFL:RRN) 
+0004.00 DRRN              S              3P 0 INZ(*ZEROS)       
+0005.00 DNEWBAL           S             12P 2 INZ(*ZEROS)       
+0005.01 C                   EXSR      FILLSFL                   
+0005.02 C                   CLEAR                   TRNENT      
+0005.03 C                   DOW       NOT *IN03                 
+0005.04 C                   WRITE     HEADER                    
+0005.05 C                   WRITE     FOOTER                    
+0005.06 C                   EXFMT     TRNENT                    
+0006.00 C   03              LEAVE                             
+0007.00 C   01              EXSR      SHOWSFL                 
+0008.00 C     ACNO          CHAIN     MSTREC                  
+0009.00 C                   IF        NOT %FOUND              
+0010.00 C                   EVAL      MSG='INVALID A/C NO.'   
+0011.00 C                   ITER                              
+0012.00 C                   ENDIF                             
+0013.00 C                   IF        TRNTYPE='CR'            
+0014.00 C                   EVAL      NEWBAL=BALANCE+TRNAMT 
+0015.00 C                   ENDIF                                        
+0016.00 C                   IF        TRNTYPE='DR'                       
+0017.00 C                   EVAL      NEWBAL=BALANCE-TRNAMT              
+0018.00 C                   ENDIF                                        
+0018.01 C** SAVE TRANSACTION.........>                                   
+0019.00 C                   IF        *IN04                              
+0020.00 C                   IF        TRNTYPE='DR' AND NEWBAL<0          
+0021.00 C                   EVAL      MSG='INSUFFICIENT BALANCE IN A/C'  
+0021.01 c                   ITER                                           
+0022.00 C                   ENDIF                               
+0023.00 C                   EVAL      BALANCE=NEWBAL            
+0024.00 C                   WRITE     TRNREC                    
+0025.00 C                   UPDATE    MSTREC                    
+0026.00 C                   CLEAR                   TRNENT      
+0027.00 C                   ENDIF                               
+0027.01 C                   IF        *IN12                     
+0028.00 C                   CLEAR                   TRNENT      
+0029.00 C                   ENDIF                               
+0030.00 C                   ENDDO                
+0031.00 C                   EVAL      *INLR=*ON  
+0032.00 C** FILL SUBFILE BELOW                   
+0033.00 C** IT'S A SUBROUTINE                    
+0034.00 C     FILLSFL       BEGSR                
+0035.00 C                   EVAL      *IN73=*ON  
+0036.00 C                   WRITE     MSTCTL     
+0037.00 C                   EVAL      RRN=0      
+0038.00 C     *LOVAL        SETLL     MSTREC     
+0039.00 C                   READ      MSTREC                   
+0040.00 C                   DOW       NOT %EOF                 
+0041.00 C                   EVAL      OPT=*BLANK               
+0042.00 C                   EVAL      RRN+=1                   
+0043.00 C                   WRITE     MSTSFL                   
+0044.00 C                   READ      MSTREC                   
+0045.00 C                   ENDDO                              
+0046.00 C                   MOVEA     '010'         *IN(71)    
+0047.00 C                   IF        RRN>0                    
+0047.00 C                   IF        RRN>0                              
+0048.00 C                   MOVEA     '110'         *IN(71)              
+0049.00 C                   ENDIF                                        
+0050.00 C                   ENDSR                                        
+0051.00 C     SHOWSFL       BEGSR                                        
+0051.01 C                   EXFMT     MSTCTL                             
+0051.02 C** EXECUTE/DISPLAY THE MASTER A/C LIST                          
+0051.03 C** USING SFLCSRRRN WE GET CRRN WE CHAIN SUBFILE USING THIS CRRN 
+0051.04 C     CRRN          CHAIN     MSTSFL                             
+0058.00 C                   ENDSR
+
+
+
+2. Write a program to store numbers from 1 to 100 in a runtime array and calculate the total
+sum of numbers using built-in function %XFOOT().  
+
+
+ Columns . . . :    6  76            Edit                      TEN30LIB/TRNGSRC 
+ SEU==>                                                                RUNTIMER 
+ FMT D  DName+++++++++++ETDsFrom+++To/L+++IDc.Keywords+++++++++++++++++++++++++ 
+        *************** Beginning of data ************************************* 
+0001.00 DNUMARY           S              3P 0 DIM(100)                          
+0002.00 DSUM              S              5P 0 INZ(0)                            
+0003.00 C     1             DO        100           X                 3 0       
+0004.00 C                                                                       
+0005.00 C                   EVAL      NUMARY(X)=X                               
+0006.00 C                   ENDDO                                               
+0007.00 C     NUMARY(85)    DSPLY                                               
+0008.00 C                   EVAL      SUM=%XFOOT(NUMARY)                        
+0009.00 C     SUM           DSPLY                                               
+0010.00 C                   EVAL      *INLR=*ON                                 
+        ****************** End of data **************************************** 
+                                                                                
+
+3.Write a program to read,update and delete details from a Employee table and use compile time array to store
+messages and also to store the name of all month to get the date of joining in format DD-MMM-YYY .
+
+
+        *************** Beginning of data *************************************
+0000.01 F* USER DEFINED DATA FORMAT LIKE DD-MM-YYYY                            
+0000.02 F* USING %SUBDT, COMPILE TIME ARRAY AND CONCATINATE                    
+0001.00 FEMPMAST   UF   E           K DISK                                     
+0002.00 FNAVIGATE1DCF   E             WORKSTN                                  
+0002.01 DMSGARY           S             40A   CTDATA DIM(4) PERRCD(1)          
+0002.02 DMTHNM                           3A   CTDATA DIM(12) PERRCD(6)         
+0003.00 DM1               C                   CONST('ALREADY AT TOP')          
+0004.00 DM2               C                   CONST('ALREADY AT BOTTOM')       
+0005.00 DM3               C                   CONST('NO SUCH EMP-ID')          
+0006.00 DM4               C                   CONST('RECORD HAS BEEN DELETED') 
+0007.00 C     *LOVAL        SETLL     EMPREC                                   
+0007.01 C                   READ      EMPREC                                   
+0008.00 C                   DOW       NOT *IN03                                
+0009.00 C                   WRITE     HEADER                                   
+0010.00 C                   WRITE     FOOTER                                   
+0011.01 C                   EVAL      DOJUDF=%CHAR(%SUBDT(DOJ:*D))+'-'+        
+0011.02 C                             MTHNM(%SUBDT(DOJ:*M))+'-'+                
+0011.03 C                             %CHAR(%SUBDT(DOJ:*Y))                     
+0011.04 C                   EXFMT     NAVSCR                                    
+0012.00 C   03              LEAVE                                               
+0013.00 C** SELECT BLOCK MAKES SWITCH-CASES IN RPG..EACH WHEN DEFINES 1 CASE    
+0014.00 C                   SELECT                                              
+0015.00 C                   WHEN      *IN04                                     
+0016.00 C* GOTO TO TOP OF FILE                                                  
+0017.00 C     *LOVAL        SETLL     EMPREC                                    
+0018.00 C                   READ      EMPREC       
+0019.00 C                   WHEN      *IN05        
+0020.00 C* GOTO BOTTON OF FILE                     
+0021.00 C     *HIVAL        SETLL     EMPREC       
+0022.00 C                   READP     EMPREC       
+0023.00 C                   WHEN      *IN06        
+0024.00 C** GOTO PREV REC                          
+0025.00 C                   READP     EMPREC       
+0026.00 C                   IF        %EOF         
+0027.00 C     *LOVAL        SETLL     EMPREC       
+0028.00 C                   READ      EMPREC       
+0029.00 C                   EVAL      MSG=msgary(1)
+0030.00 C                   ENDIF                  
+0031.00 C                   WHEN      *IN07        
+0032.00 C                   READ      EMPREC       
+0033.00 C                   IF        %EOF         
+0034.00 C     *HIVAL        SETLL     EMPREC       
+0035.00 C                   READP     EMPREC       
+0036.00 C                   EVAL      MSG=msgary(2)             
+0037.00 C                   ENDIF                               
+0038.00 C                   WHEN      *IN08                     
+0039.00 C** SEARCH... DISPLAY WINDOW ACCEPT KEY VALUE AND SEARCH
+0040.00 C                   EXFMT     EMPIDQRY                  
+0041.00 C     QEMPID        CHAIN     EMPREC                    
+0042.00 C                   IF        NOT %FOUND                
+0043.00 C                   EVAL      MSG=msgary(3)             
+0044.00 C                   ENDIF                               
+0045.00 C                   WHEN      *IN09            
+0046.00 C                   DELETE    EMPREC           
+0047.00 C                   READ      EMPREC           
+0048.00 C                   ENDSL                      
+0049.00 C                   ENDDO                      
+0050.00 C                   EVAL      *INLR=*ON        
+0051.00 data                                           
+0051.00 ** ctdata                           
+0052.00 you are already at top              
+0053.00 you are already at bottom                                
+0054.00 no such empid...                                                        
+0055.00 record has been deleted                                                 
+0056.00 **                                                                      
+0057.00 JANFEBMARAPRMAYJUN                                                      
+0058.00 JULAUGSEPOCTNOVDEC                                                      
+        ****************** End of data **************************************** 
+                                                                                
+                                                                                                                                                               
+ 4.  Write an RPGLE program for a Report Layout to print the salary of employees. 
+
+
+ Columns . . . :    1  71        Design Report                 TEN30LIB/TRNGSRC 
+ RLU==>                                                                SALREPOP 
+ BASE    ...+... 1 ...+... 2 ...+... 3 ...+... 4 ...+... 5 ...+... 6 ...+... 7  
+        ------------------------- Start of Page 001 --------------------------- 
+00001 .                                                                         
+00002 .                                                                         
+FLD1                                     <...........>               <......>   
+  HEAD1                                  SALARY REPORT               08/04/23   
+FLD1     <....>           <..>             <..> <....>   <.>        <....>      
+  HEAD2  EMP-ID           NAME             DEPT GENDER   DOJ        SALARY      
+00005 .                                                                         
+FLD1     <....>  <.......................>  <>    *   <........>  <.........>   
+ DETAIL  999999  XXXXXXXXXXXXXXXXXXXXXXXXX  99    X   XXXXXXXXXX   999,999.99   
+00007 .                                                                         
+FLD1      <..........>                                      <...............>   
+  GRAND   TOTAL SALARY                                       9,999,999,999.99   
+        --------------------------- End of Report ----------------------------- 
+                                                                                
+                                                                                                                                                                                      
+RPGLE PROGRAM
+
+ FMT FX FFilename++IPEASF.....L.....A.Device+.Keywords+++++++++++++++++++++++++
+        *************** Beginning of data *************************************
+0001.00 FEMPLOYEE9 IF   E           K DISK                                     
+0002.00 FSALREPOP  O    E             PRINTER OFLIND(*IN95)                    
+0003.00 C                   WRITE     HEAD1                                    
+0004.00 C                   WRITE     HEAD2                                    
+0005.00 C     *LOVAL        SETLL     EMPREC                                   
+0006.00 C                   READ      EMPREC                                   
+0007.00 C                   DOW       NOT %EOF                                 
+0008.00 C                   EVAL      TOTSAL=TOTSAL+SALARY                     
+0009.00 C                   WRITE     DETAIL                                   
+0010.00 C   95              WRITE     HEAD1                                    
+0011.00 C   95              WRITE     HEAD2                                    
+0011.01 C   95              EVAL      *IN95=*OFF                               
+0011.02 C                   READ      EMPREC                                   
+0012.00 C                   ENDDO                                              
+0013.00 C                   WRITE     GRAND                                    
+0014.00 C                   EVAL      *INLR=*ON                                
+                                                                                                               
+       
